@@ -25,6 +25,10 @@ type KeyMap struct {
 	Search              key.Binding
 	Next                key.Binding
 	Prev                key.Binding
+	Parent              key.Binding
+	Child               key.Binding
+	CopyParent          key.Binding
+	CopyValue           key.Binding
 }
 
 func DefaultKeyMap() KeyMap {
@@ -116,6 +120,22 @@ func DefaultKeyMap() KeyMap {
 		Prev: key.NewBinding(
 			key.WithKeys("N"),
 			key.WithHelp("", "prev search result"),
+		),
+		Parent: key.NewBinding(
+			key.WithKeys("p"),
+			key.WithHelp("", "go to parent"),
+		),
+		Child: key.NewBinding(
+			key.WithKeys("P"),
+			key.WithHelp("", "go to pre child"),
+		),
+		CopyParent: key.NewBinding(
+			key.WithKeys("V"),
+			key.WithHelp("", "cp parents to clipboard"),
+		),
+		CopyValue: key.NewBinding(
+			key.WithKeys("v"),
+			key.WithHelp("", "cp value to clipboard"),
 		),
 	}
 }

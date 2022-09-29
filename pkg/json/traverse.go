@@ -1,7 +1,10 @@
 package json
 
 import (
+	"encoding/json"
 	"fmt"
+	"strconv"
+
 	. "github.com/antonmedv/fx/pkg/dict"
 )
 
@@ -39,6 +42,31 @@ func sub(it Iterator, f func(it Iterator)) {
 				Parent: it.Path,
 			}, f)
 		}
+	}
+}
+
+func GetVal(obj interface{}, path string) string {
+	var res interface{}
+	Dfs(obj, func(it Iterator) {
+		if it.Path == path {
+			res = it.Object
+		}
+	})
+
+	switch v := res.(type) {
+	case nil:
+		return "can not find val"
+	case bool:
+		return strconv.FormatBool(v)
+	case Number:
+		return "num"
+	case string:
+		return res.(string)
+	case *Dict, Array:
+		v2, _ := json.Marshal(v)
+		return string(v2)
+	default:
+		return "unknown type"
 	}
 }
 

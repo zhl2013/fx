@@ -13,6 +13,7 @@ import (
 	. "github.com/antonmedv/fx/pkg/json"
 	. "github.com/antonmedv/fx/pkg/reducer"
 	. "github.com/antonmedv/fx/pkg/theme"
+	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -198,6 +199,7 @@ func main() {
 		prevSiblings:    map[string]string{},
 		wrap:            true,
 		searchInput:     input,
+		visitedLines:    []int{},
 	}
 	m.collectSiblings(m.json, "")
 	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithMouseCellMotion())
@@ -247,6 +249,8 @@ type model struct {
 	searchResults           []*searchResult
 	searchResultsCursor     int
 	highlightIndex          map[string]*rangeGroup
+
+	visitedLines []int
 }
 
 func (m *model) Init() tea.Cmd {
@@ -393,7 +397,37 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.render()
 			m.scrollUpToCursor()
+		case key.Matches(msg, m.keyMap.Parent):
+			m.showCursor = true
 
+			if len(m.visitedLines) == 0 || m.visitedLines[len(m.visitedLines)-1] != m.cursor {
+				m.visitedLines = append(m.visitedLines, m.cursor)
+			}
+
+			parentPath, ok := m.parents[m.cursorPath()]
+			if ok {
+				m.cursor = m.pathToIndex[parentPath]
+			}
+			m.render()
+			m.scrollUpToCursor()
+		case key.Matches(msg, m.keyMap.Child):
+			m.showCursor = true
+			if len(m.visitedLines) > 0 {
+				lastIndex := m.visitedLines[len(m.visitedLines)-1]
+				m.visitedLines = m.visitedLines[:len(m.visitedLines)-1]
+				m.cursor = lastIndex
+				m.render()
+				m.scrollUpToCursor()
+			}
+		case key.Matches(msg, m.keyMap.CopyParent):
+			if v, ok := m.lineNumberToPath[m.cursor]; ok {
+				clipboard.WriteAll(v)
+			}
+		case key.Matches(msg, m.keyMap.CopyValue):
+			if v, ok := m.lineNumberToPath[m.cursor]; ok {
+				msg := GetVal(m.json, v)
+				clipboard.WriteAll(msg)
+			}
 		case key.Matches(msg, m.keyMap.CollapseRecursively):
 			m.showCursor = true
 			if m.canBeExpanded[m.cursorPath()] && m.expandedPaths[m.cursorPath()] {
